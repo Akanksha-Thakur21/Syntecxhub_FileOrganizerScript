@@ -1,0 +1,74 @@
+import os
+import shutil
+
+# File type categories
+FILE_TYPES = {
+    "Images": [".jpg", ".png", ".jpeg", ".gif"],
+    "PDFs": [".pdf"],
+    "Docs": [".docx", ".txt", ".doc"],
+    "Audio": [".mp3", ".wav"],
+    "Videos": [".mp4", ".mkv"]
+}
+
+# Get folder path from user
+folder_path = input("Enter folder path: ")
+
+# Dry run mode
+dry_run = input("Dry run mode? (yes/no): ").lower() == "yes"
+
+# Log file
+log_file = "log.txt"
+
+def get_folder(extension):
+    for folder, extensions in FILE_TYPES.items():
+        if extension in extensions:
+            return folder
+    return "Others"
+
+def handle_duplicate(destination):
+    base, ext = os.path.splitext(destination)
+    counter = 1
+
+    while os.path.exists(destination):
+        destination = f"{base}_{counter}{ext}"
+        counter += 1
+
+    return destination
+
+def organize_files():
+    files = os.listdir(folder_path)
+
+    for file in files:
+        source = os.path.join(folder_path, file)
+
+        # Skip directories
+        if os.path.isdir(source):
+            continue
+
+        ext = os.path.splitext(file)[1].lower()
+        target_folder = get_folder(ext)
+        target_path = os.path.join(folder_path, target_folder)
+
+        # Create folder if not exists
+        if not os.path.exists(target_path):
+            os.makedirs(target_path)
+
+        destination = os.path.join(target_path, file)
+
+        # Handle duplicate file names
+        destination = handle_duplicate(destination)
+
+        if dry_run:
+            print(f"[DRY RUN] {file} -> {target_folder}/")
+        else:
+            shutil.move(source, destination)
+            print(f"Moved: {file} -> {target_folder}/")
+
+            # Logging
+            with open(log_file, "a") as log:
+                log.write(f"Moved: {file} -> {target_folder}/\n")
+
+# Run the program
+organize_files()
+
+print("Done!")
